@@ -54,7 +54,7 @@ def after_choose_film(message):
     if message.text.lower() == 'да😎':
         movie_results(message)
     if message.text.lower() == 'нет🥲':
-        pass
+        bot.send_message(message.chat.id, "Введите /start для начала выбора другого фильма.", reply_markup=None)
 
 @bot.callback_query_handler(func=lambda callback: True)
 def callback_start(callback):
@@ -73,7 +73,6 @@ def your_movie(result):
 def movie_results(message):  # получаем представление данных в виде объекта Python
     global resultConnect
     global film_id
-
     film_id = resultConnect['films'][0]['filmId']
     bot.send_message(message.chat.id, f'<b>Фильм</b>: {resultConnect["films"][0]["nameRu"]}\n'
                                       f'<b>Год выпуска</b>: {resultConnect["films"][0]["year"]}\n'
@@ -99,19 +98,26 @@ def similar_films(message):
             lst_of_id.append(id)
             num = str(i + 1) + '.'
             bot.send_message(message.chat.id, f'{num}{result["items"][i]["nameRu"]}')
-
-        bot.send_message(message.chat.id,'Хотите ли узнать о каком-нибудь из фильмов подробнее?\nНапишите порядковый номер фильма',reply_markup=kb)
-        try:
-            number_of_similar_films = lst_of_id[message.text]
-            result = connect(params={'keyword': film_name, 'page': 1}, url=f'https://kinopoiskapiunofficial.tech/api/v2.1/films/{number_of_similar_films}')
-            bot.send_message(message.chat.id, f'<b>Фильм</b>: {result["films"][0]["nameRu"]}\n'
-                                              f'<b>Год выпуска</b>: {result["films"][0]["year"]}\n'
-                                              f'<b>Описание</b>: {result["films"][0]["description"]}\n'
-                                              f'<b>Рейтинг Кинопоиска</b>: {result["films"][0]["rating"]}')
-        except IndexError:
-            bot.send_message(message.chat.id, 'Пожалуйста укажите корректный номер')
+        bot.send_message(message.chat.id,'Хотите ли узнать о каком-нибудь из фильмов подробнее?\nНапишите порядковый номер фильма',reply_markup=None)
+        bot.register_next_step_handler(message,secondFilm,lst_of_id)
     else:
         bot.send_message(message.chat.id, "Тогда хорошего просмотра!")
+
+@bot.message_handler()
+def secondFilm(message, lst_of_id):
+    global number_of_similar_films
+    global film_name
+    try:
+        number_of_similar_films = lst_of_id[int(message.text)]
+        result = connect(params={'keyword': film_name, 'page': 1},
+                         url=f'https://kinopoiskapiunofficial.tech/api/v2.1/films/{number_of_similar_films}')
+        bot.send_message(message.chat.id, f"<b>Фильм</b>: {result['data']['nameRu']}\n"
+                                          f"<b>Год выпуска</b>: {result['data']['year']}\n"
+                                          f"<b>Описание</b>: {result['data']['description']}\n"
+                                          f"<b>Url адрес</b>: {result['data']['webUrl']}",parse_mode="html", reply_markup=None)
+
+    except TypeError:
+        bot.send_message(message.chat.id, 'Пожалуйста укажите корректный номер')
 
 
 bot.polling(none_stop=True)
