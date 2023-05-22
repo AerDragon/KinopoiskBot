@@ -1,4 +1,4 @@
-#https://t.me/ChokoNadBot
+# https://t.me/ChokoNadBot
 
 import telebot
 from config import API_TOKEN
