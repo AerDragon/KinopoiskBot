@@ -55,7 +55,6 @@ def after_choose_film(message):
         movie_results(message)
     if message.text.lower() == 'нет🥲':
         bot.send_message(message.chat.id, "Введите /start для начала выбора другого фильма.", reply_markup=None)
-
 @bot.callback_query_handler(func=lambda callback: True)
 def callback_start(callback):
     if callback.data == 'start':
