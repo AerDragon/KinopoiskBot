@@ -5,6 +5,7 @@ from telebot import types
 import requests
 from PIL import Image
 from urllib.request import urlopen
+import sys
 
 global resultConnect
 global film_id
@@ -97,6 +98,9 @@ def similar_films(message):
             lst_of_id.append(id)
             num = str(i + 1) + '.'
             bot.send_message(message.chat.id, f'{num}{result["items"][i]["nameRu"]}')
+        if len(lst_of_id) == 1:
+            bot.send_message(message.chat.id, "Для данного фильма не удалось найти похожих фильмов")
+            sys.exit()
         bot.send_message(message.chat.id,'Хотите ли узнать о каком-нибудь из фильмов подробнее?\nНапишите порядковый номер фильма',reply_markup=None)
         bot.register_next_step_handler(message,secondFilm,lst_of_id)
     else:
@@ -106,17 +110,18 @@ def similar_films(message):
 def secondFilm(message, lst_of_id):
     global number_of_similar_films
     global film_name
-    try:
-        number_of_similar_films = lst_of_id[int(message.text)]
-        result = connect(params={'keyword': film_name, 'page': 1},
-                         url=f'https://kinopoiskapiunofficial.tech/api/v2.1/films/{number_of_similar_films}')
-        bot.send_message(message.chat.id, f"<b>Фильм</b>: {result['data']['nameRu']}\n"
-                                          f"<b>Год выпуска</b>: {result['data']['year']}\n"
-                                          f"<b>Описание</b>: {result['data']['description']}\n"
-                                          f"<b>Url адрес</b>: {result['data']['webUrl']}",parse_mode="html", reply_markup=None)
-
-    except TypeError:
+    if not message.text.isdigit() or 1 > int(message.text) or int(message.text) >= len(lst_of_id)  :
         bot.send_message(message.chat.id, 'Пожалуйста укажите корректный номер')
+        bot.register_next_step_handler(message, secondFilm, lst_of_id)
+        return
+    number_of_similar_films = lst_of_id[int(message.text)]
+    result = connect(params={'keyword': film_name, 'page': 1},
+                     url=f'https://kinopoiskapiunofficial.tech/api/v2.1/films/{number_of_similar_films}')
+    bot.send_message(message.chat.id, f"<b>Фильм</b>: {result['data']['nameRu']}\n"
+                                      f"<b>Год выпуска</b>: {result['data']['year']}\n"
+                                      f"<b>Описание</b>: {result['data']['description']}\n"
+                                      f"<b>Url адрес</b>: {result['data']['webUrl']}", parse_mode="html",
+                     reply_markup=None)
 
 
 bot.polling(none_stop=True)
